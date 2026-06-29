@@ -1,0 +1,95 @@
+import 'dart:async';
+
+// 1. Definimos los estados posibles de la entrega usando un Enum
+enum EstadoEntrega {
+  recibido,
+  enPreparacion,
+  enHorno,
+  conRepartidor,
+  entregado
+}
+
+// 2. Clase que representa el Pedido de la Pizza
+class PedidoPizza {
+  final int id;
+  final String descripcion;
+  final String direccion;
+  EstadoEntrega estadoActual;
+
+  PedidoPizza({
+    required this.id,
+    required this.descripcion,
+    required this.direccion,
+    this.estadoActual = EstadoEntrega.recibido,
+  });
+
+  // Método para obtener un texto amigable del estado
+  String get textoEstado {
+    switch (estadoActual) {
+      case EstadoEntrega.recibido:
+        return "🍕 ¡Pedido recibido! Estamos revisando los ingredientes.";
+      case EstadoEntrega.enPreparacion:
+        return "👨‍🍳 El pizzero está estirando la masa y agregando los toppings.";
+      case EstadoEntrega.enHorno:
+        return "🔥 La pizza está en el horno. ¡Ya casi huela a gloria!";
+      case EstadoEntrega.conRepartidor:
+        return "🛵 ¡Tu pizza va en camino! El repartidor está acelerando.";
+      case EstadoEntrega.entregado:
+        return "🎉 ¡Disfruta tu pizza! Pedido entregado con éxito.";
+    }
+  }
+}
+
+// 3. Servicio que maneja el seguimiento y flujo del pedido
+class SeguimientoService {
+  // Simulamos el cambio de estados con un Stream
+  Stream<PedidoPizza> iniciarSeguimiento(PedidoPizza pedido) async* {
+    yield pedido; // Estado inicial: Recibido
+
+    // Esperamos 3 segundos y pasamos a Preparación
+    await Future.delayed(Duration(seconds: 3));
+    pedido.estadoActual = EstadoEntrega.enPreparacion;
+    yield pedido;
+
+    // Esperamos 4 segundos y pasa al Horno
+    await Future.delayed(Duration(seconds: 4));
+    pedido.estadoActual = EstadoEntrega.enHorno;
+    yield pedido;
+
+    // Esperamos 4 segundos y se le da al Repartidor
+    await Future.delayed(Duration(seconds: 4));
+    pedido.estadoActual = EstadoEntrega.conRepartidor;
+    yield pedido;
+
+    // Esperamos 5 segundos y se entrega
+    await Future.delayed(Duration(seconds: 5));
+    pedido.estadoActual = EstadoEntrega.entregado;
+    yield pedido;
+  }
+}
+
+// 4. Función principal para ejecutar el código
+void main() async {
+  print("--- 🍕 PIZZERÍA DART - SISTEMA DE SEGUIMIENTO 🍕 ---\n");
+
+  // Creamos un pedido de prueba
+  final miPedido = PedidoPizza(
+    id: 404,
+    descripcion: "Pizza Grande Pepperoni con Orilla de Queso",
+    direccion: "Av. Siempre Viva 742",
+  );
+
+  print("Pedido #${miPedido.id} creado para la dirección: ${miPedido.direccion}");
+  print("Detalle: ${miPedido.descripcion}\n");
+  print("Iniciando el rastreo en tiempo real...\n-----------------------------------------");
+
+  final servicioSeguimiento = SeguimientoService();
+
+  // Escuchamos el Stream para reaccionar a cada cambio de estado
+  await for (var pedidoActualizado in servicioSeguimiento.iniciarSeguimiento(miPedido)) {
+    print("[Actualización]: ${pedidoActualizado.textoEstado}");
+  }
+
+  print("-----------------------------------------");
+  print("Proceso de entrega finalizado. ¡Buen provecho!");
+}
